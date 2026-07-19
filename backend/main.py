@@ -1,9 +1,14 @@
 from fastapi import FastAPI
 
-from models.chat import ChatRequest
-from services.gemini import ask_gemini
+from models.chat import ChatRequest, ChatResponse
+from services.knowledge import ask_with_knowledge
 
-app = FastAPI()
+
+app = FastAPI(
+    title="AI Developer Knowledge Assistant",
+    description="RAG based AI assistant for developer knowledge",
+    version="1.0.0"
+)
 
 
 @app.get("/")
@@ -13,11 +18,16 @@ def root():
     }
 
 
-@app.post("/chat")
+@app.post(
+    "/chat",
+    response_model=ChatResponse
+)
 def chat(request: ChatRequest):
 
-    answer = ask_gemini(request.message)
+    answer = ask_with_knowledge(
+        request.message
+    )
 
-    return {
-        "answer": answer
-    }
+    return ChatResponse(
+        answer=answer
+    )

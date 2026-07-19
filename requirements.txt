@@ -1,5 +1,15 @@
+# Web Framework
 fastapi
-google-genai
-python-dotenv
-pydantic
 uvicorn
+
+# AI
+google-genai
+
+# Database
+pyodbc
+
+# Configuration
+python-dotenv
+
+# Data Validation
+pydantic
