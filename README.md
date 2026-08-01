@@ -1,31 +1,42 @@
 # AI Developer Knowledge Assistant
 
-A Retrieval-Augmented Generation (RAG) based AI assistant that retrieves technical knowledge from a SQL Server knowledge base and generates contextual answers using the Google Gemini API.
+A Retrieval-Augmented Generation (RAG) based AI assistant that retrieves engineering knowledge from a SQL Server knowledge base and generates contextual answers using the Google Gemini API.
 
-This project demonstrates modern AI application development using FastAPI, SQL Server, and Large Language Models (LLMs).
+This project demonstrates modern AI application development using FastAPI, SQL Server, vector embeddings, semantic retrieval, and Large Language Models (LLMs).
+
+The goal of this project is to build an AI assistant that helps developers retrieve technical knowledge, troubleshoot issues, and support engineering decision making.
 
 ---
 
-## Architecture
+# Architecture
 
 ![Architecture](architecture.png)
 
-The system follows a RAG architecture:
+The system follows a Retrieval-Augmented Generation (RAG) architecture.
 
-```
+```text
 User Question
       |
       v
 FastAPI Backend
       |
       v
-Knowledge Retrieval
+RAG Service
+      |
+      +----------------+
+      |                |
+      v                v
+Question          Knowledge
+Embedding         Retrieval
+      |                |
+      v                v
+Similarity Search <----+
       |
       v
-SQL Server Knowledge Base
+Relevant Knowledge Context
       |
       v
-Context Augmentation
+Prompt Construction
       |
       v
 Google Gemini API
@@ -34,137 +45,231 @@ Google Gemini API
 Generated Answer
 ```
 
-Technical knowledge is stored in SQL Server.
-When a user submits a question, relevant knowledge records are retrieved and injected into the prompt.
-Google Gemini then generates an answer based on the retrieved context.
+The system stores structured engineering knowledge in SQL Server.
+
+When a user submits a question:
+
+1. The question is converted into an embedding vector.
+2. Similar knowledge records are retrieved using vector similarity.
+3. Retrieved knowledge is formatted as context.
+4. Google Gemini generates an answer based on the retrieved information.
 
 ---
 
-## 🚀 Current Features
+# 🚀 Current Features
 
 * ✅ FastAPI backend
 * ✅ REST API
 * ✅ Google Gemini API integration
-* ✅ SQL Server knowledge base integration
-* ✅ Knowledge retrieval using SQL keyword matching
-* ✅ RAG-based contextual response generation
+* ✅ Gemini Embedding integration
+* ✅ SQL Server knowledge base
+* ✅ Vector embedding storage
+* ✅ Semantic similarity search
+* ✅ Retrieval-Augmented Generation (RAG)
+* ✅ Context-based answer generation
 * ✅ Environment variable management (`.env`)
-* ✅ Modular project structure (Services / Repository / Models)
+* ✅ Layered architecture (Services / Repository / Models)
 
 ---
 
-## 🛠 Tech Stack
+# 🛠 Tech Stack
 
-### Backend
+## Backend
 
-- Python 3.12
-- FastAPI
-- Pydantic
+* Python 3.12
+* FastAPI
+* Pydantic
+* Uvicorn
 
-### AI
+## AI
 
-- Google Gemini API
-- Retrieval-Augmented Generation (RAG)
+* Google Gemini API
+* Gemini Embedding
+* Retrieval-Augmented Generation (RAG)
+* Semantic Similarity Search
 
-### Database
+## Database
 
-- SQL Server
-- pyodbc
+* SQL Server
+* pyodbc
+* Vector embedding storage
+
 ---
 
-## 🗄 Database Schema
+# 🗄 Database Design
 
 The knowledge base is managed using SQL Server.
 
-The `Knowledge` table stores structured technical knowledge used for RAG-based answer generation.
+## Knowledge Table
+
+The `Knowledge` table stores structured engineering knowledge used for AI retrieval.
 
 Knowledge records include:
 
-- Category
-- Technology
-- Title
-- Problem
-- Analysis
-- Solution
-- Result
-- Lessons Learned
-- Keywords
-- Difficulty
+* Category
+* Technology
+* Title
+* Problem
+* Analysis
+* Solution
+* Result
+* Lessons Learned
+* Keywords
+* Difficulty
 
-The schema definition is available here:
-
-```text
-database/schema.sql
-
-The knowledge structure is designed to store not only answers, but also troubleshooting processes and engineering decision history, enabling future expansion to more advanced retrieval methods such as embedding-based semantic search.
+The knowledge structure is designed to store not only solutions, but also troubleshooting processes and engineering decision history.
 
 ---
 
-## 📂 Project Structure
+## KnowledgeEmbedding Table
 
+The `KnowledgeEmbedding` table stores generated vector embeddings.
+
+These embeddings are used for semantic similarity search during retrieval.
+
+Embedding generation is performed by:
+
+```text
+backend/batch/generate_embeddings.py
 ```
+
+---
+
+# 📂 Project Structure
+
+```text
 backend/
 │
 ├── main.py
+│
+├── batch/
+│   └── generate_embeddings.py
 │
 ├── models/
 │   └── chat.py
 │
 ├── services/
+│   ├── embedding.py
 │   ├── gemini.py
-│   └── knowledge.py
+│   ├── knowledge_formatter.py
+│   ├── rag.py
+│   ├── retrieval.py
+│   └── similarity.py
 │
 ├── repositories/
-│   └── knowledge_repository.py
+│   ├── knowledge_repository.py
+│   ├── knowledge_embedding_repository.py
+│   └── embedding_repository.py
 │
 └── database/
     ├── connection.py
     └── schema.sql
 ```
 
-### Responsibility
+---
 
-| Layer        | Responsibility                      |
-| ------------ | ----------------------------------- |
-| main.py      | FastAPI API endpoints               |
-| services     | Application logic and AI processing |
-| repositories | Database access                     |
-| models       | Request / Response schema           |
-| database     | Database connection management      |
+# Layer Responsibility
+
+| Layer        | Responsibility                                |
+| ------------ | --------------------------------------------- |
+| main.py      | FastAPI API endpoints                         |
+| batch        | Batch processing such as embedding generation |
+| services     | AI processing, retrieval logic, RAG workflow  |
+| repositories | SQL Server data access and persistence        |
+| models       | API request / response schemas                |
+| database     | Database connection and schema management     |
 
 ---
 
-## 🧠 RAG Flow
+# 🧠 RAG Processing Flow
 
 The assistant generates answers through the following process:
 
-1. User submits a technical question.
-2. The backend searches the SQL Server knowledge database.
-3. Relevant knowledge records are retrieved.
-4. Retrieved information is formatted as additional context.
-5. The context and user question are sent to Gemini.
-6. Gemini generates a context-aware response.
+## 1. User Question
 
-Example knowledge fields:
+The user sends a technical question through the API.
 
-```
-Title
-Category
-Technology
-Problem
-Analysis
-Solution
-Result
-Lessons Learned
+Example:
+
+```text
+How can I resolve SQL Server connection timeout issues?
 ```
 
 ---
 
-## 📖 API Example
+## 2. Question Embedding
 
-### Request
+The question is converted into a vector representation using Gemini Embedding.
 
-**POST** `/chat`
+---
+
+## 3. Semantic Retrieval
+
+The system compares the question vector against stored knowledge embeddings.
+
+The most relevant knowledge records are retrieved.
+
+---
+
+## 4. Context Construction
+
+Retrieved knowledge is formatted into context:
+
+Example:
+
+```text
+Title:
+SQL Server Connection Timeout Troubleshooting
+
+Problem:
+Application cannot connect to database
+
+Analysis:
+Network timeout caused by firewall configuration
+
+Solution:
+Validate NSG rules and SQL Server listener settings
+```
+
+---
+
+## 5. Gemini Generation
+
+The context and user question are sent to Gemini.
+
+Gemini generates a context-aware response based on the retrieved engineering knowledge.
+
+---
+
+# 🔄 Embedding Generation Flow
+
+Knowledge embeddings are generated through batch processing.
+
+```text
+Knowledge Table
+      |
+      v
+generate_embeddings.py
+      |
+      v
+Knowledge Formatter
+      |
+      v
+Gemini Embedding API
+      |
+      v
+KnowledgeEmbedding Table
+```
+
+This allows the system to perform semantic retrieval instead of traditional keyword matching.
+
+---
+
+# 📖 API Example
+
+## Request
+
+POST `/chat`
 
 ```json
 {
@@ -172,27 +277,27 @@ Lessons Learned
 }
 ```
 
-### Response
+---
+
+## Response
 
 ```json
 {
-  "answer": "Based on the stored knowledge, the recommended approach is..."
+  "answer": "Based on the stored engineering knowledge, the recommended approach is..."
 }
 ```
 
 ---
 
-## ⚙️ Setup
+# ⚙️ Setup
 
-Clone this repository.
-
-Create a virtual environment.
+## Create Virtual Environment
 
 ```bash
 python -m venv .venv
 ```
 
-Activate the environment.
+Activate environment.
 
 ### Windows
 
@@ -200,30 +305,45 @@ Activate the environment.
 .venv\Scripts\activate
 ```
 
-Install dependencies.
+---
+
+## Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Create a `.env` file.
+---
+
+## Configure Environment Variables
+
+Create `.env`.
 
 ```text
 GEMINI_API_KEY=YOUR_API_KEY
 ```
 
-Configure the SQL Server connection in:
+---
+
+## Configure SQL Server Connection
+
+Update:
 
 ```text
 backend/database/connection.py
+```
 
-Run the application.
+---
+
+## Run Application
 
 ```bash
 uvicorn backend.main:app --reload
 ```
 
-Open Swagger UI.
+---
+
+## Open Swagger UI
 
 ```
 http://127.0.0.1:8000/docs
@@ -231,35 +351,47 @@ http://127.0.0.1:8000/docs
 
 ---
 
-## 🗺 Roadmap
+# 🗺 Roadmap
 
-* [x] FastAPI project
+## Completed
+
+* [x] FastAPI backend
 * [x] Gemini API integration
-* [x] Chat API
-* [x] SQL Server knowledge retrieval
+* [x] SQL Server knowledge management
 * [x] Basic RAG implementation
-* [ ] Embedding-based semantic search
-* [ ] Vector Database integration
+* [x] Gemini Embedding integration
+* [x] Semantic similarity retrieval
+* [x] Vector embedding storage
+* [x] Layered backend architecture
+
+## Future Improvements
+
+* [ ] Top-K retrieval optimization
+* [ ] Score threshold based filtering
+* [ ] RAG evaluation framework
+* [ ] Feedback-based retrieval improvement
 * [ ] React frontend
 * [ ] Authentication
 * [ ] Docker support
-* [ ] Cloud deployment (Google Cloud Run)
+* [ ] Google Cloud deployment
 
 ---
 
-## 📌 Version
+# 📌 Version
 
-**v0.2.0**
+## v0.3.0
 
-Added SQL Server based knowledge retrieval and RAG-powered response generation using Google Gemini API.
+Implemented embedding-based semantic retrieval and RAG pipeline using Google Gemini.
 
 ---
 
-## 🎯 Future Vision
+# 🎯 Future Vision
 
-The goal of this project is to evolve into a developer knowledge assistant that can:
+The goal of this project is to evolve into an AI-powered developer knowledge platform that can:
 
-* Retrieve internal technical knowledge
-* Provide architecture and troubleshooting suggestions
-* Support engineering decision making
+* Retrieve internal engineering knowledge
+* Provide troubleshooting recommendations
+* Support architecture decision making
+* Improve developer productivity
+* Learn from engineering feedback
 * Integrate with cloud-native AI platforms

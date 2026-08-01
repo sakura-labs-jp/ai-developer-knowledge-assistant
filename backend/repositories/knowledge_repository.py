@@ -1,47 +1,81 @@
-from database.connection import get_connection
+from backend.database.connection import get_connection
 
 
-def search_knowledge(keyword: str):
+def _convert_to_dict(cursor, rows):
     """
-    Search knowledge records by keyword.
-
-    The keyword is matched against multiple columns
-    using SQL LIKE conditions.
+    Convert database rows to dictionary format.
     """
 
-    conn = get_connection()
-    cursor = conn.cursor()
+    columns = [column[0] for column in cursor.description]
 
-    search = f"%{keyword}%"
+    return [
+        dict(zip(columns, row))
+        for row in rows
+    ]
 
-    cursor.execute(
-        """
-        SELECT *
-        FROM Knowledge
-        WHERE
-               Category       LIKE ?
-            OR Technology     LIKE ?
-            OR Title          LIKE ?
-            OR Problem        LIKE ?
-            OR Analysis       LIKE ?
-            OR Solution       LIKE ?
-            OR Result         LIKE ?
-            OR LessonsLearned LIKE ?
-            OR Keywords       LIKE ?
-        """,
-        search,
-        search,
-        search,
-        search,
-        search,
-        search,
-        search,
-        search,
-        search,
-    )
 
-    rows = cursor.fetchall()
+def get_all_knowledge():
+    """
+    Retrieve all knowledge records.
+    """
 
-    conn.close()
+    conn = None
 
-    return rows
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            SELECT
+                KnowledgeId,
+                Title,
+                Content,
+                Category,
+                CreatedDate,
+                UpdatedDate
+            FROM Knowledge
+            ORDER BY KnowledgeId
+        """)
+
+        rows = cursor.fetchall()
+
+        return _convert_to_dict(cursor, rows)
+
+    finally:
+        if conn:
+            conn.close()
+
+
+def get_knowledge_by_id(knowledge_id: int):
+    """
+    Retrieve knowledge record by id.
+    """
+
+    conn = None
+
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            SELECT
+                KnowledgeId,
+                Title,
+                Content,
+                Category,
+                CreatedDate,
+                UpdatedDate
+            FROM Knowledge
+            WHERE KnowledgeId = ?
+        """, (knowledge_id,))
+
+        row = cursor.fetchone()
+
+        if row is None:
+            return None
+
+        return _convert_to_dict(cursor, [row])[0]
+
+    finally:
+        if conn:
+            conn.close()

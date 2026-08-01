@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
-from models.chat import ChatRequest, ChatResponse
-from services.knowledge import ask_with_knowledge
+from backend.models.chat import ChatRequest, ChatResponse
+from backend.services.rag import ask_with_knowledge
 
 
 app = FastAPI(
@@ -13,6 +13,9 @@ app = FastAPI(
 
 @app.get("/")
 def root():
+    """
+    Health check endpoint.
+    """
     return {
         "message": "AI Developer Knowledge Assistant"
     }
@@ -23,6 +26,9 @@ def root():
     response_model=ChatResponse
 )
 def chat(request: ChatRequest):
+    """
+    Receive a user question and return an AI-generated answer.
+    """
 
     answer = ask_with_knowledge(
         request.message
