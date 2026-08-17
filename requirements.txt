@@ -1,15 +1,15 @@
 # Web Framework
-fastapi
-uvicorn
+fastapi==0.139.0
+uvicorn==0.51.0
 
 # AI
-google-genai
+google-genai==2.11.0
 
 # Database
-pyodbc
+pyodbc==5.3.0
 
 # Configuration
-python-dotenv
+python-dotenv==1.2.2
 
 # Data Validation
-pydantic
+pydantic==2.13.4

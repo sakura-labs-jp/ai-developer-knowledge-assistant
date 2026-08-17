@@ -1,6 +1,7 @@
-def create_knowledge_text(row):
+def create_knowledge_text(row) -> str:
     """
-    Create text representation for embedding generation.
+    Create a text representation of a knowledge record
+    for embedding generation.
     """
 
     text = f"""
@@ -35,10 +36,9 @@ Keywords:
     return text.strip()
 
 
-
-def create_context(rows):
+def create_context(rows) -> str:
     """
-    Create context for Gemini prompt.
+    Create context from knowledge records for the Gemini prompt.
     """
 
     context = "\n\n".join(

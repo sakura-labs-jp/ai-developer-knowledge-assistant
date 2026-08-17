@@ -4,7 +4,15 @@ import math
 def cosine_similarity(
     vector_a: list[float],
     vector_b: list[float]
-):
+) -> float:
+    """
+    Calculate cosine similarity between two vectors.
+    """
+
+    if len(vector_a) != len(vector_b):
+        raise ValueError(
+            "Vectors must have the same dimensions."
+        )
 
     dot_product = sum(
         a * b

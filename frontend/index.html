@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Knowledge Copilot</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+</head>
+
+
+<body>
+
+<div class="app">
+
+
+    <!-- =====================================================
+         Header
+         ===================================================== -->
+
+    <header class="header">
+
+        <div class="brand">
+
+            <div class="logo">
+                🧠
+            </div>
+
+            <div>
+
+                <h1>
+                    Knowledge Copilot
+                </h1>
+
+                <p>
+                    Turn engineering experience into reusable knowledge.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="status">
+
+            <span class="status-dot"></span>
+
+            Knowledge Base Online
+
+        </div>
+
+    </header>
+
+
+
+    <!-- =====================================================
+         Main
+         ===================================================== -->
+
+    <main class="main">
+
+
+        <!-- Welcome -->
+
+        <section
+            id="welcome"
+            class="welcome"
+        >
+
+            <div class="welcome-icon">
+                ✨
+            </div>
+
+            <h2>
+                What can I help you find?
+            </h2>
+
+            <p>
+                Search past incidents, troubleshooting cases,
+                architecture decisions and engineering knowledge.
+            </p>
+
+
+            <div class="suggestions">
+
+                <button
+                    class="suggestion"
+                    data-question="過去の障害対応事例を教えてください"
+                >
+                    🔧
+                    <span>Incident<br>troubleshooting</span>
+                </button>
+
+
+                <button
+                    class="suggestion"
+                    data-question="過去のクラウド移行事例を教えてください"
+                >
+                    ☁️
+                    <span>Cloud<br>migration</span>
+                </button>
+
+
+                <button
+                    class="suggestion"
+                    data-question="過去のシステム設計事例を教えてください"
+                >
+                    📐
+                    <span>Architecture<br>decisions</span>
+                </button>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =================================================
+             Chat
+             ================================================= -->
+
+        <section
+            id="chatMessages"
+            class="chat-messages"
+        >
+
+        </section>
+
+
+    </main>
+
+
+
+    <!-- =====================================================
+         Input
+         ===================================================== -->
+
+    <div class="input-area">
+
+        <div class="input-wrapper">
+
+            <textarea
+                id="questionInput"
+                placeholder="Ask about engineering knowledge..."
+                rows="1"
+            ></textarea>
+
+
+            <button
+                id="sendButton"
+                type="button"
+            >
+                ➤
+            </button>
+
+        </div>
+
+
+        <div class="input-hint">
+
+            Powered by Gemini • RAG • FastAPI
+
+        </div>
+
+    </div>
+
+
+</div>
+
+
+<script src="app.js"></script>
+
+</body>
+
+</html>

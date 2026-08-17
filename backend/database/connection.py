@@ -1,10 +1,20 @@
-import pyodbc
+import os
 
-# SQL Server接続情報
+import pyodbc
+from dotenv import load_dotenv
+
+
+load_dotenv()
+
+
+DB_SERVER = os.getenv("DB_SERVER", "localhost")
+DB_NAME = os.getenv("DB_NAME", "KnowledgeDB")
+
+
 CONNECTION_STRING = (
     "DRIVER={ODBC Driver 18 for SQL Server};"
-    "SERVER=localhost;"
-    "DATABASE=KnowledgeDB;"
+    f"SERVER={DB_SERVER};"
+    f"DATABASE={DB_NAME};"
     "Trusted_Connection=yes;"
     "Encrypt=yes;"
     "TrustServerCertificate=yes;"
@@ -13,6 +23,7 @@ CONNECTION_STRING = (
 
 def get_connection():
     """
-    SQL Serverへの接続を取得する
+    Create and return a connection to SQL Server.
     """
+
     return pyodbc.connect(CONNECTION_STRING)

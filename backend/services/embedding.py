@@ -1,28 +1,34 @@
 from google import genai
 import os
 from dotenv import load_dotenv
-from pathlib import Path
 
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv()
 
-load_dotenv(
-    BASE_DIR / ".env"
-)
+
+api_key = os.getenv("GEMINI_API_KEY")
+
+if not api_key:
+    raise ValueError(
+        "GEMINI_API_KEY is not set"
+    )
 
 
 client = genai.Client(
-    api_key=os.getenv("GEMINI_API_KEY")
+    api_key=api_key
 )
 
 
-MODEL = "gemini-embedding-001"
+EMBEDDING_MODEL = "gemini-embedding-2"
 
 
 def create_embedding(text: str):
+    """
+    Generate an embedding vector from the given text.
+    """
 
     response = client.models.embed_content(
-        model=MODEL,
+        model=EMBEDDING_MODEL,
         contents=text
     )
 
