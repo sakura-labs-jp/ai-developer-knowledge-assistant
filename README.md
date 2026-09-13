@@ -1,520 +1,281 @@
 # AI Developer Knowledge Assistant
 
-Engineering knowledge is often scattered across incident reports, architecture decisions, troubleshooting records, and individual experience.
+Engineering knowledge is often scattered across incident tickets, monitoring
+records, change logs, reports, architecture decisions, and individual
+experience.
 
-**AI Developer Knowledge Assistant** turns that engineering experience into searchable, reusable knowledge.
+**AI Developer Knowledge Assistant** retrieves that evidence, reconstructs
+position-relevant Knowledge Chains, and generates grounded answers with Google
+Gemini.
 
-It uses Retrieval-Augmented Generation (RAG) to retrieve relevant engineering knowledge from SQL Server and generate grounded answers using Google Gemini.
+> People move on. Knowledge shouldn't.
 
-Instead of relying only on an LLM's general knowledge, the assistant retrieves relevant engineering knowledge first and uses it as context for the generated response.
+## What changed in v0.4.0
 
----
+v0.4.0 adds a position-aware Knowledge Chain prototype on top of the existing
+RAG pipeline.
 
-# Architecture
+- User-to-position context
+- Position-specific knowledge mapping
+- Knowledge-to-knowledge relations
+- Multi-chain reconstruction
+- Database Engineer, Cloud Architect, and AI Engineer perspectives
+- Separation of confirmed facts, supported inferences, and unknowns
+- Guardrails against presenting correlation as confirmed causation
+- Reproducible SQL Server schema, migration, and seed scripts
 
-![Architecture](architecture.png)
+## Architecture
 
-The system follows a Retrieval-Augmented Generation (RAG) architecture.
+The repository contains two complementary retrieval flows.
 
-```text
-User Question
-      |
-      v
-Frontend
-      |
-      v
-FastAPI Backend
-      |
-      v
-Question Embedding
-      |
-      v
-Semantic Retrieval
-      |
-      v
-Cosine Similarity Search
-      |
-      v
-Top-K Knowledge
-      |
-      v
-Context Construction
-      |
-      v
-Google Gemini
-      |
-      v
-Generated Answer + Source
-```
-
-When a user submits a question:
-
-1. The question is converted into an embedding vector.
-2. The system compares it with stored knowledge embeddings.
-3. The top relevant knowledge records are retrieved.
-4. Retrieved knowledge is formatted into RAG context.
-5. Gemini generates an answer using the retrieved engineering knowledge.
-6. The API returns the generated answer together with source information.
-
----
-
-# 🚀 Current Features
-
-* ✅ FastAPI REST API
-* ✅ Google Gemini integration
-* ✅ Gemini Embedding integration
-* ✅ SQL Server knowledge base
-* ✅ Vector embedding storage
-* ✅ Embedding-based semantic retrieval
-* ✅ Cosine similarity search
-* ✅ Top-K knowledge retrieval
-* ✅ Retrieval-Augmented Generation (RAG)
-* ✅ Context-grounded answer generation
-* ✅ Source information with similarity score
-* ✅ Idempotent embedding generation using UPSERT
-* ✅ Environment-based configuration
-* ✅ Layered backend architecture
-* ✅ Simple web interface
-
----
-
-# 🛠 Tech Stack
-
-## Backend
-
-* Python 3.12
-* FastAPI
-* Pydantic
-* Uvicorn
-
-## AI
-
-* Google Gemini
-* Gemini Embedding
-* Retrieval-Augmented Generation (RAG)
-* Semantic Similarity Search
-* Cosine Similarity
-
-## Database
-
-* SQL Server
-* pyodbc
-* Vector embedding storage
-
-## Frontend
-
-* HTML
-* CSS
-* JavaScript
-
----
-
-# 🗄 Database Design
-
-The knowledge base is managed using SQL Server.
-
-## Knowledge
-
-The `Knowledge` table stores structured engineering experience used for AI retrieval.
-
-Knowledge records include:
-
-* Category
-* Technology
-* Title
-* Problem
-* Analysis
-* Solution
-* Result
-* Lessons Learned
-* Keywords
-* Difficulty
-* CreatedAt
-* UpdatedAt
-
-The schema is designed to preserve not only final solutions, but also the troubleshooting process and engineering decisions that led to them.
-
----
-
-## KnowledgeEmbedding
-
-The `KnowledgeEmbedding` table stores vector representations of knowledge records.
-
-Each embedding contains:
-
-* EmbeddingId
-* KnowledgeId
-* EmbeddingModel
-* EmbeddingVector
-* CreatedAt
-
-`KnowledgeId` and `EmbeddingModel` are unique as a pair, preventing duplicate embeddings for the same knowledge record and embedding model.
-
-Embedding generation uses UPSERT behavior, allowing the generation process to be safely rerun without creating duplicate records.
-
----
-
-# 📂 Project Structure
+### Standard RAG
 
 ```text
-ai-knowledge-assistant/
-│
-├── .env.example
-├── .gitignore
-├── architecture.png
-├── README.md
-├── requirements.txt
-│
-├── backend/
-│   ├── main.py
-│   │
-│   ├── database/
-│   │   ├── connection.py
-│   │   └── schema.sql
-│   │
-│   ├── models/
-│   │   └── chat.py
-│   │
-│   ├── repositories/
-│   │   ├── knowledge_embedding_repository.py
-│   │   └── knowledge_repository.py
-│   │
-│   ├── services/
-│   │   ├── embedding.py
-│   │   ├── gemini.py
-│   │   ├── knowledge_formatter.py
-│   │   ├── rag.py
-│   │   ├── retrieval.py
-│   │   └── similarity.py
-│   │
-│   └── tools/
-│       └── generate_embeddings.py
-│
-└── frontend/
-    ├── app.js
-    ├── index.html
-    └── style.css
+Question
+  -> Question Embedding
+  -> Semantic Retrieval
+  -> Top-K Knowledge
+  -> RAG Context
+  -> Gemini
+  -> Answer + Source
 ```
 
----
+The FastAPI `/chat` endpoint currently uses this flow.
 
-# Layer Responsibilities
+### Position-aware Knowledge Chain
 
-| Layer | Responsibility |
+```text
+User ID
+  -> User Positions
+  -> Question Embedding
+  -> Start Knowledge
+  -> Position-specific Relations
+  -> Reconstructed Knowledge Chains
+  -> Evidence Analysis
+  -> Grounded Answer
+```
+
+For the included batch-processing example, the same incident produces different
+evidence paths:
+
+```text
+Database Engineer:
+Incident -> RESOLVED_BY -> Resolution -> RESULTED_IN -> Result
+
+Cloud Architect:
+Incident -> RESOLVED_BY -> Resolution -> RESULTED_IN -> Result
+
+AI Engineer:
+Incident -> ANALYZED_BY -> Analysis -> INFORMED -> Decision
+```
+
+## Grounding behavior
+
+Knowledge Chain answer generation uses two LLM stages:
+
+1. Evidence analysis classifies retrieved information as
+   `CONFIRMED_FACTS`, `INFERENCES`, or `UNKNOWNS`.
+2. Final answer generation may state confirmed facts directly, must qualify
+   inferences, and must preserve evidence gaps.
+
+The AI Engineer chain also carries an architecture decision requiring
+time-window correlation to remain an inference unless direct causal evidence
+exists.
+
+## Tech stack
+
+- Python 3.12
+- FastAPI
+- Google Gemini `gemini-3.6-flash`
+- Gemini Embedding `gemini-embedding-2`
+- SQL Server
+- pyodbc
+- HTML, CSS, and JavaScript
+
+## Project structure
+
+```text
+backend/
+├── database/
+│   ├── connection.py
+│   ├── schema.sql
+│   ├── kc_schema.sql
+│   ├── kc_seed_phase0.sql
+│   ├── kc_migration_phase1.sql
+│   └── kc_seed_phase1.sql
+├── repositories/
+│   ├── knowledge_repository.py
+│   ├── knowledge_embedding_repository.py
+│   ├── user_repository.py
+│   ├── kc_knowledge_repository.py
+│   ├── kc_knowledge_embedding_repository.py
+│   └── knowledge_relation_repository.py
+├── services/
+│   ├── rag.py
+│   ├── retrieval.py
+│   ├── chain_builder.py
+│   ├── kc_retrieval.py
+│   ├── knowledge_chain.py
+│   └── knowledge_chain_answer.py
+└── tools/
+    ├── generate_embeddings.py
+    └── build_kc_embeddings.py
+```
+
+## Knowledge Chain tables
+
+| Table | Responsibility |
 | --- | --- |
-| `main.py` | FastAPI endpoints and API error handling |
-| `services` | AI processing, semantic retrieval, and RAG workflow |
-| `repositories` | SQL Server data access and persistence |
-| `models` | API request and response schemas |
-| `database` | Database connection and schema management |
-| `tools` | Embedding generation utilities |
-| `frontend` | Simple browser-based user interface |
+| `KC_User` | Demo users |
+| `KC_Position` | Engineering positions and descriptions |
+| `KC_UserPosition` | User-to-position assignments |
+| `KC_KnowledgeSource` | Ticket, CSV, PDF, monitoring, and ADR metadata |
+| `KC_Knowledge` | Atomic knowledge units |
+| `KC_KnowledgePosition` | Position relevance for each knowledge unit |
+| `KC_KnowledgeRelation` | Directed, typed, confidence-scored relations |
+| `KC_KnowledgeEmbedding` | Model-specific embedding vectors |
 
----
-
-# 🧠 RAG Processing Flow
-
-## 1. User Question
-
-The user submits a technical question through the web interface or REST API.
-
-Example:
+Supported knowledge types are:
 
 ```text
-How can I improve SQL Server batch performance?
+Incident, Analysis, Resolution, Decision, Result
 ```
 
----
+## Setup
 
-## 2. Question Embedding
+### Prerequisites
 
-The question is converted into an embedding vector using Gemini Embedding.
+- Python 3.12
+- SQL Server
+- Microsoft ODBC Driver 18 for SQL Server
+- Gemini API key
 
-The application currently uses:
-
-```text
-gemini-embedding-2
-```
-
----
-
-## 3. Semantic Retrieval
-
-The question vector is compared against stored knowledge embeddings using cosine similarity.
-
-Only embeddings generated with the currently configured embedding model are considered.
-
----
-
-## 4. Top-K Retrieval
-
-Results are ranked by similarity score.
-
-The current implementation retrieves the top 3 most relevant knowledge records.
-
----
-
-## 5. Context Construction
-
-Retrieved knowledge is transformed into structured context containing information such as:
-
-```text
-Title
-Category
-Technology
-Problem
-Analysis
-Solution
-Result
-Lessons Learned
-```
-
----
-
-## 6. Gemini Generation
-
-The retrieved context and user question are sent to Gemini.
-
-Gemini generates an answer using the retrieved engineering knowledge whenever it is relevant.
-
-If the available knowledge is insufficient, the model is instructed to state that clearly.
-
----
-
-## 7. Source Information
-
-The API returns information about the top retrieved source together with the generated answer.
-
-Source information includes:
-
-* Knowledge ID
-* Title
-* Category
-* Technology
-* Similarity score
-
----
-
-# 🔄 Embedding Generation Flow
-
-Knowledge embeddings are generated through:
-
-```text
-backend/tools/generate_embeddings.py
-```
-
-Processing flow:
-
-```text
-Knowledge
-    |
-    v
-Knowledge Formatter
-    |
-    v
-Gemini Embedding
-    |
-    v
-Embedding Vector
-    |
-    v
-UPSERT
-    |
-    v
-KnowledgeEmbedding
-```
-
-Embeddings can be generated or regenerated with:
-
-```bash
-python -m backend.tools.generate_embeddings
-```
-
-The combination of `KnowledgeId` and `EmbeddingModel` is unique, making the process safe to rerun.
-
----
-
-# 📖 API Example
-
-## Request
-
-`POST /chat`
-
-```json
-{
-  "message": "How can I improve SQL Server performance?"
-}
-```
-
-## Response
-
-```json
-{
-  "answer": "Based on the retrieved engineering knowledge, ...",
-  "source": {
-    "knowledge_id": 1,
-    "title": "SQL Server Batch Performance Improvement",
-    "category": "Database",
-    "technology": "SQL Server",
-    "similarity": 0.91
-  }
-}
-```
-
----
-
-# ⚙️ Setup
-
-## Prerequisites
-
-* Python 3.12
-* SQL Server
-* Microsoft ODBC Driver 18 for SQL Server
-* Gemini API key
-
----
-
-## 1. Create Virtual Environment
+### Python environment
 
 ```bash
 python -m venv .venv
 ```
 
-### Windows
+Windows:
 
-```bash
+```bat
 .venv\Scripts\activate
+python -m pip install -r requirements.txt
 ```
 
----
+### Configuration
 
-## 2. Install Dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
----
-
-## 3. Configure Environment Variables
-
-Copy `.env.example` to `.env`.
-
-Example:
+Copy `.env.example` to `.env` and set:
 
 ```text
 GEMINI_API_KEY=YOUR_API_KEY
-
 DB_SERVER=localhost
 DB_NAME=KnowledgeDB
 ```
 
 The `.env` file is excluded from Git.
 
----
+## Database setup
 
-## 4. Create Database Schema
+### New environment
 
-Create the `KnowledgeDB` database in SQL Server.
+Run these scripts in order:
 
-Then execute:
+1. `backend/database/schema.sql` for the standard RAG tables.
+2. `backend/database/kc_schema.sql` for the Knowledge Chain tables.
+3. `backend/database/kc_seed_phase0.sql`.
+4. `backend/database/kc_seed_phase1.sql`.
 
-```text
-backend/database/schema.sql
-```
+Then generate both embedding sets:
 
-This creates the `Knowledge` and `KnowledgeEmbedding` tables and their required constraints.
-
----
-
-## 5. Add Knowledge
-
-Add engineering knowledge records to the `Knowledge` table.
-
-The knowledge can represent technical incidents, troubleshooting experience, architecture decisions, or engineering best practices.
-
----
-
-## 6. Generate Embeddings
-
-From the project root:
-
-```bash
+```bat
 python -m backend.tools.generate_embeddings
+python -m backend.tools.build_kc_embeddings
 ```
 
----
+### Existing Phase 0 environment
 
-## 7. Run Application
+Run:
 
-Run the FastAPI application from the project root:
+1. `backend/database/kc_migration_phase1.sql`.
+2. `backend/database/kc_seed_phase1.sql`.
 
-```bash
+Then rebuild Knowledge Chain embeddings:
+
+```bat
+python -m backend.tools.build_kc_embeddings
+```
+
+Seed scripts use natural-key lookups and `NOT EXISTS` checks rather than fixed
+identity values. Embeddings use an UPSERT keyed by Knowledge ID and embedding
+model.
+
+## Run and verify
+
+Start the API:
+
+```bat
 uvicorn backend.main:app --reload
 ```
 
----
-
-## 8. Open Swagger UI
+Swagger UI:
 
 ```text
 http://127.0.0.1:8000/docs
 ```
 
----
+Run Knowledge Chain reconstruction:
 
-# 🗺 Roadmap
+```bat
+python -m backend.services.knowledge_chain
+```
 
-## Completed
+Run grounded answer generation:
 
-* [x] FastAPI backend
-* [x] Gemini API integration
-* [x] SQL Server knowledge management
-* [x] Gemini Embedding integration
-* [x] Vector embedding storage
-* [x] Embedding-based semantic retrieval
-* [x] Cosine similarity search
-* [x] Top-K retrieval
-* [x] Retrieval-Augmented Generation
-* [x] Source attribution
-* [x] Idempotent embedding generation
-* [x] Layered backend architecture
-* [x] Simple web interface
+```bat
+python -m backend.services.knowledge_chain_answer
+```
 
-## Future Improvements
+The included local test evaluates:
 
-* [ ] Similarity score threshold filtering
-* [ ] Vector database / ANN search for larger datasets
-* [ ] Hybrid search (keyword + vector)
-* [ ] RAG evaluation framework
-* [ ] Feedback-based retrieval improvement
-* [ ] React frontend
-* [ ] Authentication and authorization
-* [ ] Automated tests
-* [ ] Docker support
-* [ ] CI/CD pipeline
-* [ ] Observability and monitoring
-* [ ] Google Cloud deployment
+| User | Position context | Expected chain |
+| --- | --- | --- |
+| Alice | Database Engineer, Cloud Architect | Database and Cloud |
+| Bob | Cloud Architect | Cloud only |
+| Carol | AI Engineer | AI Analysis and Decision |
 
----
+## Current limitations
 
-# 📌 Version
+- Knowledge relations and position mappings are manually curated.
+- Semantic retrieval scans stored vectors in application memory.
+- The Knowledge Chain flow is currently a local service test and is not yet
+  exposed through a dedicated API endpoint or frontend.
+- Automated evaluation and regression tests are not yet implemented.
+- Demo sources are illustrative rather than connected enterprise systems.
 
-## v0.3.0
+## Roadmap
 
-Implemented an embedding-based semantic retrieval pipeline and Retrieval-Augmented Generation architecture using Google Gemini and SQL Server.
+### Completed
 
----
+- Phase 0: `Incident -> Resolution -> Result`
+- Phase 1: `User -> Position -> Relevant Knowledge Chain`
 
-# 🎯 Future Vision
+### Next: Phase 2
 
-The goal is to evolve this project into an AI-powered engineering knowledge platform that can:
+- Chain-based reasoning
+- Tool selection
+- Controlled action execution
+- Human approval boundaries
+- Action result capture as new knowledge
 
-* Preserve engineering experience
-* Retrieve relevant incident and troubleshooting knowledge
-* Support architecture decision making
-* Reduce dependency on individual experts
-* Improve developer productivity
-* Turn engineering experience into reusable organizational knowledge
+### Later
 
-**People move on. Knowledge shouldn't.**
+- Automated evaluation
+- Observability
+- Security and guardrails
+- Google Cloud deployment
+- Scale and ANN/vector database evaluation
+
+## Version
+
+**v0.4.0 — Position-aware Knowledge Chain and Context Expansion**
