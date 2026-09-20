@@ -368,92 +368,69 @@ def answer_with_knowledge_chain(
 if __name__ == "__main__":
 
     question = (
-        "Why did the nightly batch processing become slow?"
+        "Web ServerからDB Serverにつながらない。"
+        "何を確認して、必要ならどこに問い合わせればいい？"
     )
 
-    for user_id in [
-        1,
-        2,
-        3,
-    ]:
+    user_id = 1
 
-        result = (
-            answer_with_knowledge_chain(
-                user_id=user_id,
-                question=question,
-            )
+    result = (
+        answer_with_knowledge_chain(
+            user_id=user_id,
+            question=question,
         )
+    )
 
+    print(
+        "\n================================"
+    )
+
+    print(
+        f"UserId   : "
+        f"{result['user_id']}"
+    )
+
+    print(
+        f"Positions: "
+        f"{', '.join(result['positions'])}"
+    )
+
+    print(
+        f"Question : "
+        f"{result['question']}"
+    )
+
+    print(
+        f"Start    : "
+        f"{result['start_knowledge_id']}"
+    )
+
+    if result["search_score"] is not None:
         print(
-            "\n================================"
+            f"Similarity: "
+            f"{result['search_score']:.4f}"
         )
 
+    if result["evidence_context"]:
         print(
-            f"UserId   : "
-            f"{result['user_id']}"
+            "\n--- Evidence Context ---"
         )
-
         print(
-            f"Positions: "
-            f"{', '.join(result['positions'])}"
+            result["evidence_context"]
         )
 
+    if result["evidence_analysis"]:
         print(
-            f"Question : "
-            f"{result['question']}"
+            "\n--- Evidence Analysis ---"
         )
-
         print(
-            f"Start    : "
-            f"{result['start_knowledge_id']}"
+            result["evidence_analysis"]
         )
 
-        if (
-            result["search_score"]
-            is not None
-        ):
+    print(
+        "\n--- Final Answer ---"
+    )
 
-            print(
-                f"Similarity: "
-                f"{result['search_score']:.4f}"
-            )
-
-        # ---------------------------------------------
-        # Evidence Context
-        # ---------------------------------------------
-
-        if result["evidence_context"]:
-
-            print(
-                "\n--- Evidence Context ---"
-            )
-
-            print(
-                result["evidence_context"]
-            )
-
-        # ---------------------------------------------
-        # Evidence Analysis
-        # ---------------------------------------------
-
-        if result["evidence_analysis"]:
-
-            print(
-                "\n--- Evidence Analysis ---"
-            )
-
-            print(
-                result["evidence_analysis"]
-            )
-
-        # ---------------------------------------------
-        # Final Answer
-        # ---------------------------------------------
-
-        print(
-            "\n--- Final Answer ---"
-        )
-
-        print(
-            result["answer"]
-        )
+    print(
+        result["answer"]
+    )

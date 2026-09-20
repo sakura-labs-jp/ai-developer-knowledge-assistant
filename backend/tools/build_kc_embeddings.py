@@ -1,5 +1,5 @@
 from backend.repositories.kc_knowledge_embedding_repository import (
-    get_all_kc_knowledge,
+    get_kc_knowledge_without_embedding,
     insert_kc_embedding,
 )
 from backend.services.embedding import (
@@ -9,11 +9,21 @@ from backend.services.embedding import (
 
 
 def build_kc_embeddings() -> None:
+    """
+    Generate embeddings only for KC knowledge units
+    that do not yet have an embedding for the
+    current embedding model.
+    """
 
-    knowledge_list = get_all_kc_knowledge()
+    knowledge_list = (
+        get_kc_knowledge_without_embedding(
+            EMBEDDING_MODEL
+        )
+    )
 
     print(
-        f"Found {len(knowledge_list)} KC knowledge units."
+        f"Found {len(knowledge_list)} "
+        f"KC knowledge units without embeddings."
     )
 
     for knowledge in knowledge_list:
@@ -23,8 +33,8 @@ def build_kc_embeddings() -> None:
         content = knowledge["Content"]
 
         # Include type in the embedded text.
-        # This gives the semantic representation a little
-        # more context than embedding Content alone.
+        # This gives the semantic representation
+        # additional context.
         text = (
             f"Knowledge Type: {knowledge_type}\n"
             f"Content: {content}"
@@ -35,7 +45,9 @@ def build_kc_embeddings() -> None:
             f"KnowledgeId={knowledge_id}"
         )
 
-        vector = create_embedding(text)
+        vector = create_embedding(
+            text
+        )
 
         insert_kc_embedding(
             knowledge_id=knowledge_id,
@@ -43,7 +55,9 @@ def build_kc_embeddings() -> None:
             vector=vector,
         )
 
-    print("KC embedding generation completed.")
+    print(
+        "KC embedding generation completed."
+    )
 
 
 if __name__ == "__main__":

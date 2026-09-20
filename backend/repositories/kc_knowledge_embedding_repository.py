@@ -140,3 +140,52 @@ def get_all_kc_embeddings() -> list[dict]:
 
     finally:
         connection.close()
+def get_kc_knowledge_without_embedding(
+    model: str,
+) -> list[dict]:
+    """
+    Get KC knowledge units that do not yet have
+    an embedding for the specified model.
+    """
+
+    query = """
+        SELECT
+            K.KnowledgeId,
+            K.KnowledgeType,
+            K.Content
+        FROM dbo.KC_Knowledge K
+
+        WHERE NOT EXISTS
+        (
+            SELECT 1
+            FROM dbo.KC_KnowledgeEmbedding E
+            WHERE E.KnowledgeId = K.KnowledgeId
+              AND E.EmbeddingModel = ?
+        )
+
+        ORDER BY K.KnowledgeId
+    """
+
+    connection = get_connection()
+
+    try:
+        cursor = connection.cursor()
+
+        cursor.execute(
+            query,
+            model,
+        )
+
+        rows = cursor.fetchall()
+
+        return [
+            {
+                "KnowledgeId": row.KnowledgeId,
+                "KnowledgeType": row.KnowledgeType,
+                "Content": row.Content,
+            }
+            for row in rows
+        ]
+
+    finally:
+        connection.close()
